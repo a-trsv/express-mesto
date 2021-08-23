@@ -38,12 +38,7 @@ const createUser = (req, res) => {
         .then(user => {
             res.status(200).send(user)
         })
-        .catch((error) => {
-            if (error.name === 'ValidationError') {
-                return res.status(ERROR_REQUEST).send({ message: 'Введенные данные некорректны!' })
-            }
-            res.status(SERVER_ERROR).send({ message: `Ошибка сервера: ${error}` })
-        })
+        .catch((error) => res.status(SERVER_ERROR).send({ message: `Ошибка сервера: ${error}` }))
 }
 
 const updateUser = (req, res) => {
