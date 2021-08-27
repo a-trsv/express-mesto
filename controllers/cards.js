@@ -18,12 +18,8 @@ const getCards = (req, res) => {
             }
             res.status(200).send(cards)
         })
-        .catch((error) => {
-            if (error.name === 'ValidationError') {
-                return res.status(ERROR_REQUEST).send({ message: 'Введенные данные некорректны!' })
-            }
-            res.status(SERVER_ERROR).send({ message: `Ошибка сервера: ${error}` })
-        })
+        .catch((error) => res.status(SERVER_ERROR).send({ message: `Ошибка сервера: ${error}` })
+        )
 }
 
 const createCard = (req, res) => {
@@ -44,19 +40,27 @@ const deleteCard = (req, res) => {
     const { cardId } = req.params
     Card.findByIdAndRemove(cardId)
         .then((card) => {
+            if (!card) {
+                res.status(ERROR_CODE).send({ message: 'Запрашиваемые карточкa не найдены' })
+                return
+            }
             res.status(200).send(card)
         })
         .catch((error) => {
             if (error.name === 'CastError') {
-                return res.status(ERROR_CODE).send({ message: 'Запрашиваемая карточка с данным _id не найдена' })
+                return res.status(ERROR_REQUEST).send({ message: 'Передан некорректный _id' })
             }
             res.status(SERVER_ERROR).send({ message: `Ошибка сервера: ${error}` })
         })
 }
 
 const likeCard = (req, res) => {
-    Card.findByIdAndUpdate(req.params.cardId, { $addToSet: { likes: req.user._id } }, { new: true },)
+    Card.findByIdAndUpdate(req.params.cardId, { $addToSet: { likes: req.user._id } }, { new: true })
         .then((card) => {
+            if (!card) {
+                res.status(ERROR_CODE).send({ message: 'Запрашиваемые карточкa не найдены' })
+                return
+            }
             res.status(200).send(card)
         })
         .catch((error) => {
@@ -69,8 +73,12 @@ const likeCard = (req, res) => {
 
 
 const dislikeCard = (req, res) => {
-    Card.findByIdAndUpdate(req.params.cardId, { $pull: { likes: req.user._id } }, { new: true },)
+    Card.findByIdAndUpdate(req.params.cardId, { $pull: { likes: req.user._id } }, { new: true })
         .then((card) => {
+            if (!card) {
+                res.status(ERROR_CODE).send({ message: 'Запрашиваемые карточкa не найдены' })
+                return
+            }
             res.status(200).send(card)
         })
         .catch((error) => {
