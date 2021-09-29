@@ -3,7 +3,7 @@ const UnauthorizedError = require('./errors/error-unathorized')
 
 const JWT_SECRET = 'secret'
 
-function auth (req, res, next) {
+function auth(req, res, next) {
     const token = req.cookies.jwt
     let payload
 

@@ -32,35 +32,33 @@ const getUsers = (req, res, next) => {
 const getCurrentUser = (req, res, next) =>
     User.findById(req.user._id)
         .then((user) => {
-            if(!user) {
+            if (!user) {
                 throw new NotFoundError('Пользователь не найден с таким id!')
             }
             res.send(user);
         })
         .catch((error) => {
             if (error.name === 'CastError') {
-                // return res.status(ERROR_REQUEST).send({ message: 'Введенные данные некорректны!' })
                 throw new RequestError('Введенные данные некорректны! a pochemy xz')
             } else {
                 next(error)
             }
         })
 
-const getUserById = (req, res, next) => { 
+const getUserById = (req, res, next) => {
     User.findById(req.params.userId)
         .orFail(new NotFoundError('Пользователь не найден с таким id!'))
         .then((user) =>
             res.status(200).send(user))
         .catch((error) => {
             if (error.name === 'CastError') {
-                console.log(req.params.userId)
-                // return res.status(ERROR_REQUEST).send({ message: 'Введенные данные некорректны!' })
+                // console.log(req.params.userId)
                 next(new RequestError('Введенные данные некорректны!'))
             } else {
                 next(error)
             }
-            // res.status(SERVER_ERROR).send({ message: `Ошибка сервера: ${error}` })
-        })}
+        })
+}
 
 const createUser = (req, res, next) => {
     const { name, about, avatar, email, password } = req.body
@@ -75,7 +73,8 @@ const createUser = (req, res, next) => {
             } else if (error.name === "MongoError" && error.code === 11000) {
                 next(new ExistEmailError('Данный E-Mail уже зарегистрирован!'))
             } else {
-            next(error)}
+                next(error)
+            }
         })
 }
 
@@ -89,12 +88,11 @@ const login = (req, res, next) => {
                 NODE_ENV === 'production' ? JWT_SECRET : 'secret',
                 { expiresIn: '7d' }
             )
-            // res.send({ token })
             res.cookie('jwt', token, {
                 httpOnly: true,
                 sameSite: true,
             })
-            .send({ message: 'token передан!' })
+                .send({ message: 'token передан!' })
         })
         .catch(() => next(new UnauthorizedError('Ошибка Авторизации')))
 }
@@ -105,18 +103,15 @@ const updateUser = (req, res, next) => {
         .then((user) => {
             if (!user) {
                 throw new NotFoundError('Запрашиваемый пользователь не найден')
-                // return res.status(ERROR_CODE).send({ message: 'Запрашиваемый пользователь не найден' })
             }
             return res.status(200).send(user)
         })
         .catch((error) => {
             if (error.name === 'ValidationError' || error.name === 'CastError') {
                 next(new RequestError('Введенные данные некорректны!'))
-                // return res.status(ERROR_REQUEST).send({ message: 'Введенные данные некорректны!' })
             } else {
                 next(error)
             }
-            // res.status(SERVER_ERROR).send({ message: `Ошибка сервера: ${error}` })
         })
 }
 
@@ -126,18 +121,15 @@ const updateUserAvatar = (req, res, next) => {
         .then((user) => {
             if (!user) {
                 throw new NotFoundError('Запрашиваемый пользователь не найден')
-                // return res.status(ERROR_CODE).send({ message: 'Запрашиваемый пользователь не найден' })
             }
             return res.status(200).send(user)
         })
         .catch((error) => {
             if (error.name === 'ValidationError' || error.name === 'CastError') {
                 next(new RequestError('Введенные данные некорректны!'))
-                // return res.status(ERROR_REQUEST).send({ message: 'Введенные данные некорректны!' })
             } else {
                 next(error)
             }
-            // res.status(SERVER_ERROR).send({ message: `Ошибка сервера: ${error}` })
         })
 }
 

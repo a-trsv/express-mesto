@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema({
         default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
         validate: {
             validator(url) {
-                validator.isURL(url, {require_protocol: true})
+                validator.isURL(url, { require_protocol: true })
             },
             message: 'Некорректная ссылка на картинку!'
         }
@@ -53,31 +53,23 @@ const userSchema = new mongoose.Schema({
     }
 })
 
-function toJSON() {
-    const obj = this.toObject()
-    delete obj.password
-    return obj
-}
-
-userSchema.methods.toJSON = toJSON
-
 //проверка ввода и сравнения пароля с хэшем
 userSchema.statics.findUserByCredentials = function (email, password) {
-    return this.findOne({email}).select('+password')
-    .then((user) => {
-        if (!user) {
-            return Promise.reject(new Error ('Введены некорректные почта и пароль!'))
-        }
-
-        return bcrypt.compare(password, user.password)
-        .then((matched) => {
-            if (!matched) {
-                return Promise.reject(new Error ('Введены некорректные почта и пароль!'))
+    return this.findOne({ email }).select('+password')
+        .then((user) => {
+            if (!user) {
+                return Promise.reject(new Error('Введены некорректные почта и пароль!'))
             }
 
-            return user
+            return bcrypt.compare(password, user.password)
+                .then((matched) => {
+                    if (!matched) {
+                        return Promise.reject(new Error('Введены некорректные почта и пароль!'))
+                    }
+
+                    return user
+                })
         })
-    })
-} 
+}
 
 module.exports = mongoose.model('user', userSchema)

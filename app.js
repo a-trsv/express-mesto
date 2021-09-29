@@ -6,9 +6,10 @@ const mongoose = require('mongoose')
 const cookieParser = require('cookie-parser')
 
 const { PORT = 3000 } = process.env
-const {celebrate, Joi, errors } = require('celebrate')
+const { errors } = require('celebrate')
 
 const { createUser, login } = require('./controllers/users')
+const { signInValidation, signUpValidation } = require('./middlewares/validation')
 const auth = require('./middlewares/auth')
 const usersRouter = require('./routes/users')
 const cardsRouter = require('./routes/cards')
@@ -22,39 +23,20 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
     useFindAndModify: false,
     useUnifiedTopology: true
 })
+
 const app = express()
 app.use(express.json())
 app.use(helmet())
 app.use(cookieParser())
-// app.use((req, res, next) => {
-//     req.user = {
-//         _id: '61241a178b785908c694f8fa',
-//     }
-//     next()
-// })
-app.post('/signin', celebrate({
-    body: Joi.object().keys({
-        email: Joi.string().required().email(),
-        password: Joi.string().required().min(8)
-    }),
-}), login)
-app.post('/signup', 
-celebrate({
-    body: Joi.object().keys({
-        email: Joi.string().required().email(),
-        password: Joi.string().required().min(8),
-        name: Joi.string().min(2).max(30),
-        about: Joi.string().min(2).max(30),
-        avatar: Joi.string().min(2).max(30)
-    }),
-}), createUser)
+app.post('/signin', signInValidation, login)
+app.post('/signup', signUpValidation, createUser)
 app.use(auth)
 app.use('/', usersRouter)
 app.use('/', cardsRouter)
-app.use('*', ()=> {throw new NotFoundError('Запрашиваемый адрес не найден')})
+app.use('*', () => { throw new NotFoundError('Запрашиваемый адрес не найден') })
 app.use(errors())
-app.use((err, req, res, next)=> {
-    const {statusCode = 500, message} = err
+app.use((error, req, res, next) => {
+    const { statusCode = 500, message } = error
     res.status(statusCode).send({
         message: statusCode === 500 ? 'Ошибка сервера' : message
     })
