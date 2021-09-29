@@ -35,7 +35,7 @@ const getCurrentUser = (req, res, next) =>
             if (!user) {
                 throw new NotFoundError('Пользователь не найден с таким id!')
             }
-            res.send(user);
+            res.send(user)
         })
         .catch((error) => {
             if (error.name === 'CastError') {
