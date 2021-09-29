@@ -1,15 +1,22 @@
 const mongoose = require('mongoose')
+const validator = require('validator')
 
 const cardSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
         minlength: 2,
-        minlength: 30
+        maxlength: 30
     },
     link: {
         type: String,
-        required: true
+        required: true,
+        validate: {
+            validator(url) {
+                validator.isURL(url, {require_protocol: true})
+            },
+            message: 'Некорректная ссылка на картинку!'
+        }
     },
     owner: {
         ref: 'user',
@@ -18,7 +25,7 @@ const cardSchema = new mongoose.Schema({
     },
     likes: {
         ref: 'user',
-        type: mongoose.Schema.Types.ObjectId,
+        type: Array,
         default: [],
     },
     createdAt: {

@@ -3,89 +3,102 @@ const Card = require('../models/card')
 // Errors
 
 //400 -> переданы некорректные данные
-const ERROR_REQUEST = 400
+const RequestError = require('../middlewares/errors/request-error')
 //404 -> карточка/пользователь не найдены
-const ERROR_CODE = 404
-//500 -> ошибка по-умолчанию
-const SERVER_ERROR = 500
+const NotFoundError = require('../middlewares/errors/not-found-error')
+//401 -> ошибка аутентификации/авторизации
+const UnauthorizedError = require('../middlewares/errors/error-unathorized')
 
-const getCards = (req, res) => {
+const getCards = (req, res, next) => {
     Card.find({})
         .then(cards => {
-            if (cards.length === 0) {
-                res.status(ERROR_CODE).send({ message: 'Запрашиваемые карточки не найдены' })
-                return
-            }
             res.status(200).send(cards)
         })
-        .catch((error) => res.status(SERVER_ERROR).send({ message: `Ошибка сервера: ${error}` })
-        )
+       .catch(next)
 }
 
-const createCard = (req, res) => {
+const createCard = (req, res, next) => {
     const { name, link } = req.body
-    Card.create({ name, link, owner: req.user._id })
+    const owner = req.user._id
+    Card.create({ name, link, owner})
         .then(card => {
-            res.status(200).send(card)
+            res.send(card)
         })
         .catch((error) => {
             if (error.name === 'ValidationError') {
-                return res.status(ERROR_REQUEST).send({ message: 'Введенные данные некорректны!' })
+                console.log(error)
+                next(new RequestError('Введенные данные некорректны!'))
+            } else {
+                next(error)
             }
-            res.status(SERVER_ERROR).send({ message: `Ошибка сервера: ${error}` })
         })
+        .catch(next)
 }
 
-const deleteCard = (req, res) => {
-    const { cardId } = req.params
-    Card.findByIdAndRemove(cardId)
-        .then((card) => {
-            if (!card) {
-                res.status(ERROR_CODE).send({ message: 'Запрашиваемые карточкa не найдены' })
-                return
-            }
-            res.status(200).send(card)
-        })
-        .catch((error) => {
-            if (error.name === 'CastError') {
-                return res.status(ERROR_REQUEST).send({ message: 'Передан некорректный _id' })
-            }
-            res.status(SERVER_ERROR).send({ message: `Ошибка сервера: ${error}` })
-        })
+// feat: сначала проверить права на удаление карточки, затем удалить
+const deleteCard = (req, res, next) => {
+    Card.findById(req.params.cardId)
+    .orFail(new NotFoundError('card не найденa с таким id!'))
+    .then((card) => {
+        if (card.owner.toString() !== req.user._id) {
+            next (new NotFoundError('Запрашиваемая карточка не найдена'))
+        } else {
+            Card.findByIdAndDelete(req.params.cardId)
+                    .then (() => {
+                        res.status(200).send(card)
+                    })
+        }
+    })
+    .catch((error) => {
+        if (error.name === 'CastError') {
+            console.log(req.params.cardId)
+            next(new RequestError('Введенные данные некорректны!'))
+        } else {
+            next(error)
+        }
+    })
+        // .then((card) => {
+        //     if (!card) {
+        //         throw new NotFoundError('Запрашиваемая карточка не найдена')
+        //     } else if (card.owner.toString() !== cardId) {
+        //         throw new UnauthorizedError('Недостаточно прав для удаления карточки')
+        //     } else {
+        //         Card.findByIdAndRemove(cardId)
+        //         .then ((card) => {
+        //             res.status(200).send(card)
+        //         })
+        //     }
+        // })
+        // .catch(next)
 }
 
-const likeCard = (req, res) => {
+const likeCard = (req, res, next) => {
     Card.findByIdAndUpdate(req.params.cardId, { $addToSet: { likes: req.user._id } }, { new: true })
         .then((card) => {
-            if (!card) {
-                res.status(ERROR_CODE).send({ message: 'Запрашиваемые карточкa не найдены' })
-                return
-            }
             res.status(200).send(card)
         })
         .catch((error) => {
             if (error.name === 'CastError') {
-                return res.status(ERROR_REQUEST).send({ message: 'Некорректные данные для постановки лайка' })
+                console.log(error)
+                next(new RequestError('Введенные данные некорректны!'))
+            } else {
+                next(error)
             }
-            res.status(SERVER_ERROR).send({ message: `Ошибка сервера: ${error}` })
         })
 }
 
 
-const dislikeCard = (req, res) => {
+const dislikeCard = (req, res, next) => {
     Card.findByIdAndUpdate(req.params.cardId, { $pull: { likes: req.user._id } }, { new: true })
         .then((card) => {
-            if (!card) {
-                res.status(ERROR_CODE).send({ message: 'Запрашиваемые карточкa не найдены' })
-                return
-            }
             res.status(200).send(card)
         })
         .catch((error) => {
             if (error.name === 'CastError') {
-                return res.status(ERROR_REQUEST).send({ message: 'Некорректные данные для снятия лайка' })
+                next(new RequestError('Введенные данные некорректны!'))
+            } else {
+                next(error)
             }
-            res.status(SERVER_ERROR).send({ message: `Ошибка сервера: ${error}` })
         })
 }
 
