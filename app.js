@@ -1,48 +1,48 @@
-require('dotenv').config()
-const path = require('path')
-const express = require('express')
-const helmet = require('helmet')
-const mongoose = require('mongoose')
-const cookieParser = require('cookie-parser')
+require('dotenv').config();
+const path = require('path');
+const express = require('express');
+const helmet = require('helmet');
+const mongoose = require('mongoose');
+const cookieParser = require('cookie-parser');
 
-const { PORT = 3000 } = process.env
-const { errors } = require('celebrate')
+const { PORT = 3000 } = process.env;
+const { errors } = require('celebrate');
 
-const { createUser, login } = require('./controllers/users')
-const { signInValidation, signUpValidation } = require('./middlewares/validation')
-const auth = require('./middlewares/auth')
-const usersRouter = require('./routes/users')
-const cardsRouter = require('./routes/cards')
+const { createUser, login } = require('./controllers/users');
+const { signInValidation, signUpValidation } = require('./middlewares/validation');
+const auth = require('./middlewares/auth');
+const usersRouter = require('./routes/users');
+const cardsRouter = require('./routes/cards');
 
-//404 -> карточка/пользователь не найдены
-const NotFoundError = require('./middlewares/errors/not-found-error')
+// 404 -> карточка/пользователь не найдены
+const NotFoundError = require('./middlewares/errors/not-found-error');
 
 mongoose.connect('mongodb://localhost:27017/mestodb', {
-    useNewUrlParser: true,
-    useCreateIndex: true,
-    useFindAndModify: false,
-    useUnifiedTopology: true
-})
+  useNewUrlParser: true,
+  useCreateIndex: true,
+  useFindAndModify: false,
+  useUnifiedTopology: true,
+});
 
-const app = express()
-app.use(express.json())
-app.use(helmet())
-app.use(cookieParser())
-app.post('/signin', signInValidation, login)
-app.post('/signup', signUpValidation, createUser)
-app.use(auth)
-app.use('/', usersRouter)
-app.use('/', cardsRouter)
-app.use('*', () => { throw new NotFoundError('Запрашиваемый адрес не найден') })
-app.use(errors())
+const app = express();
+app.use(express.json());
+app.use(helmet());
+app.use(cookieParser());
+app.post('/signin', signInValidation, login);
+app.post('/signup', signUpValidation, createUser);
+app.use(auth);
+app.use('/', usersRouter);
+app.use('/', cardsRouter);
+app.use('*', () => { throw new NotFoundError('Запрашиваемый адрес не найден'); });
+app.use(errors());
 app.use((error, req, res, next) => {
-    const { statusCode = 500, message } = error
-    res.status(statusCode).send({
-        message: statusCode === 500 ? 'Ошибка сервера' : message
-    })
-    next()
-})
-app.use(express.static(path.join(__dirname, 'public')))
+  const { statusCode = 500, message } = error;
+  res.status(statusCode).send({
+    message: statusCode === 500 ? 'Ошибка сервера' : message,
+  });
+  next();
+});
+app.use(express.static(path.join(__dirname, 'public')));
 app.listen(PORT, () => {
-    console.log(`App listening on port ${PORT}`)
-})
+  console.log(`App listening on port ${PORT}`);
+});
