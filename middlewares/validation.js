@@ -1,4 +1,5 @@
 const { celebrate, Joi } = require('celebrate')
+const validator = require('validator')
 
 const signInValidation = celebrate({
     body: Joi.object().keys({
@@ -36,12 +37,26 @@ const userUpdateValidation = celebrate({
     })
 })
 
+const isUrlValid = (url) => {
+    const result = validator.isUrl(url)
+    if (result) {
+        return url
+    }
+    throw new Error('Вы ввели некорректную ссылку!')
+}
+
 const userAvatarUpdateValidation = celebrate({
     body: Joi.object().keys({
-        avatar: Joi.string().min(2).max(30)
+        avatar: Joi.string().required().custom(isUrlValid)
     })
 })
 
+const newCardValidation = celebrate({
+    body: Joi.object().keys({
+        name: Joi.string().required().min(2).max(30),
+        link: Joi.string().required().custom(isUrlValid)
+    })
+})
 
 module.exports = {
     signInValidation,
@@ -49,5 +64,6 @@ module.exports = {
     userIdValidation,
     userUpdateValidation,
     userAvatarUpdateValidation,
+    newCardValidation,
     cardIdValidation
 }

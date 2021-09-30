@@ -8,6 +8,8 @@ const RequestError = require('../middlewares/errors/request-error')
 const NotFoundError = require('../middlewares/errors/not-found-error')
 //401 -> ошибка аутентификации/авторизации
 const UnauthorizedError = require('../middlewares/errors/error-unathorized')
+//403 -> доступ запрещен
+const AccessError = require('../middlewares/errors/access-error')
 
 const getCards = (req, res, next) => {
     Card.find({})
@@ -41,7 +43,7 @@ const deleteCard = (req, res, next) => {
         .orFail(new NotFoundError('card не найденa с таким id!'))
         .then((card) => {
             if (card.owner.toString() !== req.user._id) {
-                next(new NotFoundError('Запрашиваемая карточка не найдена'))
+                next(new AccessError('У вас нет прав на удаление этой карточки!'))
             } else {
                 Card.findByIdAndDelete(req.params.cardId)
                     .then(() => {
@@ -61,6 +63,7 @@ const deleteCard = (req, res, next) => {
 
 const likeCard = (req, res, next) => {
     Card.findByIdAndUpdate(req.params.cardId, { $addToSet: { likes: req.user._id } }, { new: true })
+        .orFail(new NotFoundError('card не найденa с таким id!'))
         .then((card) => {
             res.status(200).send(card)
         })
@@ -77,6 +80,7 @@ const likeCard = (req, res, next) => {
 
 const dislikeCard = (req, res, next) => {
     Card.findByIdAndUpdate(req.params.cardId, { $pull: { likes: req.user._id } }, { new: true })
+        .orFail(new NotFoundError('card не найденa с таким id!'))
         .then((card) => {
             res.status(200).send(card)
         })
