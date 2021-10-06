@@ -25,9 +25,11 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
   useFindAndModify: false,
   useUnifiedTopology: true,
 });
-
+const corpOptions = {
+  origin: ['https://a-trsv.nomoredomains.monster/', 'http://localhost:3000', 'https://api.a-trsv.nomoredomains.club']
+}
 const app = express();
-app.use(cors())
+app.use(cors(corpOptions));
 app.use(express.json());
 app.use(helmet());
 app.use(cookieParser());
